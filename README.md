@@ -4,11 +4,11 @@
 
 ## 技术栈与 MVP 边界
 
-- Java 17、Spring Boot 3.3.4、Maven、LangGraph4j 1.8.19
+- Java 17、Spring Boot 3.3.4、Maven、LangGraph4j 1.8.19、LangChain4j 1.16.3
 - Jackson JSON 序列化、JUnit 5
-- 数据和工具全部为本地 Mock，不需要数据库、外部观测系统或 API Key
+- 数据、工具与 Planner 全部为本地 Mock，不需要数据库或外部观测系统
 - 同时提供手写 `ManualIncidentGraphRunner` 与真实 StateGraph `LangGraphIncidentGraphRunner`
-- 暂不引入 LangChain4j；`IncidentPlannerService`、`IncidentDiagnosisService` 仍使用 Mock 实现
+- Diagnosis 默认使用 Mock，也可切换为 LangChain4j structured output；LLM 不参与规划或工具选择
 
 ## 排障流程
 
@@ -64,6 +64,40 @@ mvn spring-boot:run -Dspring-boot.run.arguments=--aiops.graph.runner=langgraph
 
 LangGraph 模式使用 `langgraph4j-core` 的 StateGraph 编排同一组业务节点。适配层只负责在 LangGraph `AgentState` 与现有 `IncidentState` 之间转换，不包含业务判断。
 
+## Diagnosis 模式
+
+默认使用 `mock`，不会创建 ChatModel，也不会读取或校验 API Key，因此本地启动和 `mvn test` 均不依赖网络：
+
+```yaml
+aiops:
+  diagnosis:
+    mode: mock       # mock 或 llm
+    llm:
+      api-key: ${OPENAI_API_KEY:}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+      model-name: ${OPENAI_MODEL:gpt-4.1-mini}
+      timeout-seconds: 30
+      max-retries: 2
+```
+
+切换到 OpenAI：
+
+```bash
+OPENAI_API_KEY=your-key mvn spring-boot:run \
+  -Dspring-boot.run.arguments=--aiops.diagnosis.mode=llm
+```
+
+OpenAI-compatible 服务可同时覆盖地址和模型：
+
+```bash
+OPENAI_API_KEY=your-key \
+OPENAI_BASE_URL=https://your-provider.example/v1 \
+OPENAI_MODEL=your-model \
+mvn spring-boot:run -Dspring-boot.run.arguments=--aiops.diagnosis.mode=llm
+```
+
+LLM 模式启用严格 JSON Schema structured output，温度为 0。模型只能引用已收集证据的原文，不能规划或调用工具；模型调用或结果校验失败会直接报错，不会静默回退 Mock。缺少 API Key 或配置未知 mode 时应用启动失败。
+
 ## 诊断接口
 
 ```bash
@@ -104,13 +138,13 @@ curl -X POST http://localhost:8080/api/evaluation/run
 
 评测会运行全部五个 case，计算根因准确率、人工接管准确率和工具选择准确率。工具选择准确率是各 case 的 expected tool 召回率平均值；重复调用只计一次，额外工具不扣分，工具顺序不计分。
 
-当前 Mock 实现与 GroundTruth 一致，因此回归基线的三项准确率均为 `1.0`。
+Mock Diagnosis 与 GroundTruth 一致，因此默认回归基线的三项准确率均为 `1.0`。LLM Diagnosis 的根因和接管判断由真实模型生成，评测值可能波动。
 
 ## 后续扩展
 
 后续可以在保持节点和服务接口不变的情况下：
 
-- 引入 `dev.langchain4j:langchain4j`，用 AiService structured output 替换 Mock Planner/Diagnosis
+- 在保持确定性工具策略的前提下增强 Diagnosis prompt、评测与可观测性
 - 按需引入 `org.bsc.langgraph4j:langgraph4j-langchain4j`，但不与当前纯编排阶段绑定
 - 接入 OpenTelemetry 与 Jaeger/Tempo trace
 - 接入 Prometheus metrics
