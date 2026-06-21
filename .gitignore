@@ -1,0 +1,14 @@
+target/
+*.jar
+*.war
+*.class
+
+.idea/
+.vscode/
+
+logs/
+*.log
+
+application.yml
+application-dev.yml
+application-prod.yml
