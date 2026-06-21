@@ -76,6 +76,14 @@ class NodeBehaviorTest {
         assertThat(state.isNeedMoreEvidence()).isFalse();
     }
 
+    @Test
+    void graphConfigurationRejectsUnknownRunner() {
+        assertThatThrownBy(() -> new IncidentGraphConfig()
+                .incidentGraphRunner("unknown", null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("aiops.graph.runner must be either 'manual' or 'langgraph'");
+    }
+
     private IncidentState stateWithAlert(String alertType) {
         IncidentState state = new IncidentState();
         state.setCaseId("S01");

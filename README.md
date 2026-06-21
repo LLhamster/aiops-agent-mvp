@@ -4,11 +4,11 @@
 
 ## 技术栈与 MVP 边界
 
-- Java 17、Spring Boot 3.3.4、Maven
+- Java 17、Spring Boot 3.3.4、Maven、LangGraph4j 1.8.19
 - Jackson JSON 序列化、JUnit 5
 - 数据和工具全部为本地 Mock，不需要数据库、外部观测系统或 API Key
-- 首版使用手写 `IncidentGraphRunner`，不引入 LangGraph4j 和 LangChain4j
-- `IncidentPlannerService`、`IncidentDiagnosisService` 和独立图节点是后续替换边界
+- 同时提供手写 `ManualIncidentGraphRunner` 与真实 StateGraph `LangGraphIncidentGraphRunner`
+- 暂不引入 LangChain4j；`IncidentPlannerService`、`IncidentDiagnosisService` 仍使用 Mock 实现
 
 ## 排障流程
 
@@ -42,10 +42,27 @@ HIGH_LATENCY 必须包含 trace 主证据，并至少包含 metrics、logs 或 r
 
 ```bash
 mvn test
+# 默认使用 manual runner
 mvn spring-boot:run
 ```
 
 服务默认监听 `http://localhost:8080`。
+
+可通过配置切换图执行器，两个 Runner 的接口响应和评测结果完全一致：
+
+```yaml
+aiops:
+  graph:
+    runner: manual   # manual 或 langgraph
+```
+
+也可以在启动时覆盖：
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.arguments=--aiops.graph.runner=langgraph
+```
+
+LangGraph 模式使用 `langgraph4j-core` 的 StateGraph 编排同一组业务节点。适配层只负责在 LangGraph `AgentState` 与现有 `IncidentState` 之间转换，不包含业务判断。
 
 ## 诊断接口
 
@@ -91,13 +108,13 @@ curl -X POST http://localhost:8080/api/evaluation/run
 
 ## 后续扩展
 
-第二阶段可以在保持节点和服务接口不变的情况下：
+后续可以在保持节点和服务接口不变的情况下：
 
-- 引入 `org.bsc.langgraph4j:langgraph4j-core` 和 `org.bsc.langgraph4j:langgraph4j-langchain4j`，用真实 `StateGraph` 替换手写 Runner
 - 引入 `dev.langchain4j:langchain4j`，用 AiService structured output 替换 Mock Planner/Diagnosis
+- 按需引入 `org.bsc.langgraph4j:langgraph4j-langchain4j`，但不与当前纯编排阶段绑定
 - 接入 OpenTelemetry 与 Jaeger/Tempo trace
 - 接入 Prometheus metrics
 - 接入 Loki/ELK logs
 - 使用 Qdrant 存储并检索 runbook
 
-具体依赖版本在第二阶段从 Maven Central 选择兼容 Java 17 的最新稳定版本。
+当前阶段不启用 LangGraph4j checkpoint、Studio、流式输出或并行节点。

@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: aiops-agent-mvp
+
+server:
+  port: 8080
+
+aiops:
+  graph:
+    runner: manual
