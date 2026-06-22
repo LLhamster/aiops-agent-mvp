@@ -8,11 +8,16 @@ import com.example.aiops.model.MetricPoint;
 import com.example.aiops.model.ToolCall;
 import com.example.aiops.model.TraceData;
 import com.example.aiops.model.TraceSpan;
+import com.example.aiops.model.ProbeResult;
+import com.example.aiops.model.ConfigSnapshot;
+import com.example.aiops.model.DependencyStatus;
 import com.example.aiops.tool.AlertTool;
 import com.example.aiops.tool.LogTool;
 import com.example.aiops.tool.MetricTool;
-import com.example.aiops.tool.RunbookTool;
 import com.example.aiops.tool.TraceTool;
+import com.example.aiops.tool.ProbeTool;
+import com.example.aiops.tool.ConfigTool;
+import com.example.aiops.tool.DependencyStatusTool;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,15 +35,20 @@ public class ToolExecutorNode {
     private final LogTool logTool;
     private final MetricTool metricTool;
     private final TraceTool traceTool;
-    private final RunbookTool runbookTool;
+    private final ProbeTool probeTool;
+    private final ConfigTool configTool;
+    private final DependencyStatusTool dependencyStatusTool;
 
     public ToolExecutorNode(AlertTool alertTool, LogTool logTool, MetricTool metricTool,
-                            TraceTool traceTool, RunbookTool runbookTool) {
+                            TraceTool traceTool, ProbeTool probeTool, ConfigTool configTool,
+                            DependencyStatusTool dependencyStatusTool) {
         this.alertTool = alertTool;
         this.logTool = logTool;
         this.metricTool = metricTool;
         this.traceTool = traceTool;
-        this.runbookTool = runbookTool;
+        this.probeTool = probeTool;
+        this.configTool = configTool;
+        this.dependencyStatusTool = dependencyStatusTool;
     }
 
     public IncidentState execute(IncidentState state) {
@@ -61,7 +71,9 @@ public class ToolExecutorNode {
             case "query_logs" -> executeLogs(state);
             case "query_metrics" -> executeMetrics(state);
             case "query_trace" -> executeTrace(state);
-            case "search_runbook" -> executeRunbook(state);
+            case "run_probe" -> executeProbe(state);
+            case "query_config" -> executeConfig(state);
+            case "query_dependency_status" -> executeDependencyStatus(state);
             default -> throw new IllegalArgumentException("Unsupported tool: " + toolName);
         };
 
@@ -118,7 +130,29 @@ public class ToolExecutorNode {
                         "durationMs", slowest.durationMs(), "status", slowest.status())));
     }
 
-    private List<Evidence> executeRunbook(IncidentState state) {
-        return runbookTool.searchRunbook(state);
+    private List<Evidence> executeProbe(IncidentState state) {
+        ProbeResult result = probeTool.runProbe(state.getCaseId(), state.getNextToolParams());
+        return List.of(new Evidence("PROBE", "run_probe",
+                "主动探测：" + result.probeName() + " latency=" + result.latencyMs()
+                        + "ms, " + result.detail(),
+                Map.of("probeName", result.probeName(), "success", result.success(),
+                        "latencyMs", result.latencyMs(), "detail", result.detail())));
     }
+
+    private List<Evidence> executeConfig(IncidentState state) {
+        ConfigSnapshot snapshot = configTool.queryConfig(state.getCaseId(), state.getNextToolParams());
+        return List.of(new Evidence("CONFIG", "query_config",
+                "配置快照：" + snapshot.component() + " " + snapshot.values(),
+                Map.of("component", snapshot.component(), "values", snapshot.values())));
+    }
+
+    private List<Evidence> executeDependencyStatus(IncidentState state) {
+        DependencyStatus status = dependencyStatusTool.queryStatus(
+                state.getCaseId(), state.getNextToolParams());
+        return List.of(new Evidence("DEPENDENCY_STATUS", "query_dependency_status",
+                "依赖状态：" + status.component() + "=" + status.status() + ", " + status.detail(),
+                Map.of("component", status.component(), "status", status.status(),
+                        "detail", status.detail())));
+    }
+
 }

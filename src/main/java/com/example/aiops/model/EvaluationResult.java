@@ -7,7 +7,6 @@ public record EvaluationResult(
         double rootCauseAccuracy,
         double toolSelectionAccuracy,
         double humanHandoffAccuracy,
-        double runbookRecallAccuracy,
         Double llmRootCauseAccuracy,
         Double llmEvidenceGroundedRate,
         int llmInvalidOutputCount,

@@ -6,6 +6,7 @@ public record DiagnosisResult(
         String rootCause,
         double confidence,
         List<String> evidence,
-        String recommendation
+        String recommendation,
+        boolean needHumanHandoff
 ) {
 }

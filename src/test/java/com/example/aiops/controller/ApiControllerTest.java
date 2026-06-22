@@ -36,33 +36,15 @@ class ApiControllerTest {
     void evaluationEndpointReturnsPerfectMockBaseline() throws Exception {
         mockMvc.perform(post("/api/evaluation/run").param("diagnosisMode", "mock"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCases").value(5))
+                .andExpect(jsonPath("$.totalCases").value(7))
                 .andExpect(jsonPath("$.rootCauseAccuracy").value(1.0))
                 .andExpect(jsonPath("$.toolSelectionAccuracy").value(1.0))
                 .andExpect(jsonPath("$.humanHandoffAccuracy").value(1.0))
-                .andExpect(jsonPath("$.runbookRecallAccuracy").value(1.0))
                 .andExpect(jsonPath("$.llmRootCauseAccuracy").doesNotExist())
                 .andExpect(jsonPath("$.llmInvalidOutputCount").value(0))
-                .andExpect(jsonPath("$.caseResults.length()").value(5));
+                .andExpect(jsonPath("$.caseResults.length()").value(7));
     }
 
-    @Test
-    void runbookSearchEndpointReturnsRetrievalSectionsOnly() throws Exception {
-        mockMvc.perform(post("/api/runbooks/search")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "alertType":"HIGH_LATENCY",
-                                  "component":"qdrant",
-                                  "rootCauseHypothesis":"QDRANT_TIMEOUT",
-                                  "symptom":"qdrant_search span latency high qdrant query timeout",
-                                  "topK":3
-                                }
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].runbookId").value("RB-QDRANT-TIMEOUT"))
-                .andExpect(jsonPath("$[0].sectionType").value("SIGNAL_PATTERN"));
-    }
 
     @Test
     void llmEvaluationWithoutApiKeyReturnsExplicitBadRequest() throws Exception {
@@ -87,7 +69,7 @@ class ApiControllerTest {
                         .content("{\"caseId\":\"bad\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("caseId must match ^S\\d{2}$"));
+                .andExpect(jsonPath("$.message").value("caseId must match ^S\\d{2}[A-Z]?$") );
     }
 
     @Test

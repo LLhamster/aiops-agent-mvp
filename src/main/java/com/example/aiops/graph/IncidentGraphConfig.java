@@ -14,8 +14,10 @@ import com.example.aiops.llm.IncidentPlannerService;
 import com.example.aiops.tool.AlertTool;
 import com.example.aiops.tool.LogTool;
 import com.example.aiops.tool.MetricTool;
-import com.example.aiops.tool.RunbookTool;
 import com.example.aiops.tool.TraceTool;
+import com.example.aiops.tool.ProbeTool;
+import com.example.aiops.tool.ConfigTool;
+import com.example.aiops.tool.DependencyStatusTool;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bsc.langgraph4j.GraphStateException;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,8 +42,11 @@ public class IncidentGraphConfig {
 
     @Bean
     ToolExecutorNode toolExecutorNode(AlertTool alertTool, LogTool logTool, MetricTool metricTool,
-                                      TraceTool traceTool, RunbookTool runbookTool) {
-        return new ToolExecutorNode(alertTool, logTool, metricTool, traceTool, runbookTool);
+                                      TraceTool traceTool, ProbeTool probeTool,
+                                      ConfigTool configTool,
+                                      DependencyStatusTool dependencyStatusTool) {
+        return new ToolExecutorNode(alertTool, logTool, metricTool, traceTool,
+                probeTool, configTool, dependencyStatusTool);
     }
 
     @Bean

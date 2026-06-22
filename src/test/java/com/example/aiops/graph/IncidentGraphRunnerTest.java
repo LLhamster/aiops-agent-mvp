@@ -31,15 +31,19 @@ class IncidentGraphRunnerTest {
     static Stream<Arguments> scenarios() {
         return Stream.of(
                 Arguments.of("S01", "QDRANT_TIMEOUT", false,
-                        List.of("get_alert", "query_trace", "query_metrics", "search_runbook"), "主证据（trace）", "旁证（metrics）"),
+                        List.of("get_alert", "query_trace", "query_metrics", "query_logs"), "主证据（trace）", "旁证（metrics）"),
+                Arguments.of("S01A", "QDRANT_TIMEOUT", false,
+                        List.of("get_alert", "query_trace", "query_metrics", "query_logs"), "主证据（trace）", "旁证（metrics）"),
+                Arguments.of("S01B", "QDRANT_SLOW_QUERY", false,
+                        List.of("get_alert", "query_trace", "query_metrics", "query_logs", "run_probe", "query_config"), "主证据（trace）", "主动探测"),
                 Arguments.of("S02", "LLM_TIMEOUT", false,
-                        List.of("get_alert", "query_trace", "query_logs", "search_runbook"), "主证据（trace）", "旁证（logs）"),
+                        List.of("get_alert", "query_trace", "query_metrics", "query_logs"), "主证据（trace）", "旁证（logs）"),
                 Arguments.of("S03", "MYSQL_SLOW_QUERY", false,
-                        List.of("get_alert", "query_trace", "query_logs", "search_runbook"), "主证据（trace）", "旁证（logs）"),
+                        List.of("get_alert", "query_trace", "query_metrics", "query_logs"), "主证据（trace）", "旁证（logs）"),
                 Arguments.of("S04", "CONSUMER_FAILURE", true,
-                        List.of("get_alert", "query_metrics", "query_logs", "search_runbook"), "旁证（metrics）", "旁证（logs）"),
+                        List.of("get_alert", "query_metrics", "query_logs", "query_dependency_status"), "旁证（metrics）", "旁证（logs）"),
                 Arguments.of("S05", "FALSE_POSITIVE_LOW_TRAFFIC", false,
-                        List.of("get_alert", "query_metrics", "query_logs", "search_runbook"), "旁证（metrics）", "旁证（logs）")
+                        List.of("get_alert", "query_metrics", "query_logs"), "旁证（metrics）", "旁证（logs）")
         );
     }
 
@@ -54,9 +58,8 @@ class IncidentGraphRunnerTest {
         assertThat(report.rootCause()).isEqualTo(rootCause);
         assertThat(report.needHumanHandoff()).isEqualTo(handoff);
         assertThat(report.toolCalls()).extracting(ToolCall::toolName).containsExactlyElementsOf(expectedTools);
-        assertThat(report.toolCalls()).hasSizeLessThanOrEqualTo(4);
+        assertThat(report.toolCalls()).hasSizeLessThanOrEqualTo(6);
         assertThat(report.evidence()).anyMatch(item -> item.startsWith(firstEvidenceType));
         assertThat(report.evidence()).anyMatch(item -> item.startsWith(secondEvidenceType));
-        assertThat(report.evidence()).anyMatch(item -> item.startsWith("知识依据（runbook/"));
     }
 }

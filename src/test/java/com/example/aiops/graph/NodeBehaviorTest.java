@@ -25,7 +25,7 @@ class NodeBehaviorTest {
         assertThat(state.getCaseId()).isEqualTo("S01");
         assertThat(state.getAlert()).isNull();
         assertThat(state.getStepCount()).isZero();
-        assertThat(state.getMaxSteps()).isEqualTo(4);
+        assertThat(state.getMaxSteps()).isEqualTo(6);
         assertThat(state.isNeedMoreEvidence()).isTrue();
     }
 
@@ -65,32 +65,18 @@ class NodeBehaviorTest {
         analyzer.execute(state);
         assertThat(state.isNeedMoreEvidence()).isTrue();
 
-        state.getEvidenceList().add(new Evidence("RUNBOOK", "search_runbook", "knowledge",
-                Map.of("runbookId", "RB-TEST")));
-        analyzer.execute(state);
-        assertThat(state.isNeedMoreEvidence()).isFalse();
     }
 
     @Test
     void maxStepsAlwaysStopsEvidenceCollection() {
         IncidentState state = stateWithAlert("QUEUE_BACKLOG");
-        state.setStepCount(4);
+        state.setStepCount(6);
 
         new EvidenceAnalyzerNode().execute(state);
 
         assertThat(state.isNeedMoreEvidence()).isFalse();
     }
 
-    @Test
-    void runbookKnowledgeCannotReplaceOperationalEvidence() {
-        IncidentState state = stateWithAlert("HIGH_LATENCY");
-        state.getEvidenceList().add(new Evidence("RUNBOOK", "search_runbook", "knowledge",
-                Map.of("runbookId", "RB-QDRANT-TIMEOUT")));
-
-        new EvidenceAnalyzerNode().execute(state);
-
-        assertThat(state.isNeedMoreEvidence()).isTrue();
-    }
 
     @Test
     void graphConfigurationRejectsUnknownRunner() {

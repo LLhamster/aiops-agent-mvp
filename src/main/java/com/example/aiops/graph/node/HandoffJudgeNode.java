@@ -5,7 +5,10 @@ import com.example.aiops.graph.IncidentState;
 public class HandoffJudgeNode {
 
     public IncidentState execute(IncidentState state) {
-        state.setNeedHumanHandoff("S04".equals(state.getCaseId()));
+        if (state.getDiagnosisResult() == null) {
+            throw new IllegalStateException("Cannot judge handoff before diagnosis");
+        }
+        state.setNeedHumanHandoff(state.getDiagnosisResult().needHumanHandoff());
         return state;
     }
 }

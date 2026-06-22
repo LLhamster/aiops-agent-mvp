@@ -38,7 +38,8 @@ class LangChain4jIncidentDiagnosisServiceTest {
                   "rootCause": "QDRANT_TIMEOUT",
                   "confidence": 0.86,
                   "evidence": ["主证据（trace）：qdrant_search span 耗时 3100ms"],
-                  "recommendation": "检查 Qdrant collection 状态"
+                  "recommendation": "检查 Qdrant collection 状态",
+                  "needHumanHandoff": false
                 }
                 """);
         IncidentDiagnosisAiService aiService = AiServices.builder(IncidentDiagnosisAiService.class)
@@ -62,16 +63,16 @@ class LangChain4jIncidentDiagnosisServiceTest {
     static Stream<Arguments> invalidResults() {
         return Stream.of(
                 Arguments.of(new DiagnosisResult("qdrant-timeout", 0.8,
-                                List.of(TRACE_EVIDENCE), "处理建议"),
+                                List.of(TRACE_EVIDENCE), "处理建议", false),
                         "rootCause must be uppercase snake_case"),
                 Arguments.of(new DiagnosisResult("QDRANT_TIMEOUT", 1.2,
-                                List.of(TRACE_EVIDENCE), "处理建议"),
+                                List.of(TRACE_EVIDENCE), "处理建议", false),
                         "confidence must be between 0 and 1"),
                 Arguments.of(new DiagnosisResult("QDRANT_TIMEOUT", 0.8,
-                                List.of("不存在的证据"), "处理建议"),
+                                List.of("不存在的证据"), "处理建议", false),
                         "contains evidence not present"),
                 Arguments.of(new DiagnosisResult("QDRANT_TIMEOUT", 0.8,
-                                List.of(TRACE_EVIDENCE), " "),
+                                List.of(TRACE_EVIDENCE), " ", false),
                         "recommendation must not be blank")
         );
     }

@@ -13,9 +13,6 @@ public record CaseEvaluationResult(
         List<String> expectedTools,
         List<String> actualTools,
         List<String> matchedExpectedTools,
-        double toolRecall,
-        List<String> expectedRunbookIds,
-        List<String> actualRunbookIds,
-        double runbookRecall
+        double toolRecall
 ) {
 }

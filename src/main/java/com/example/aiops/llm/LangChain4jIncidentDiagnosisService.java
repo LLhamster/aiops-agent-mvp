@@ -30,8 +30,8 @@ public class LangChain4jIncidentDiagnosisService implements IncidentDiagnosisSer
     @Override
     public DiagnosisResult diagnose(IncidentState state) {
         List<Evidence> diagnosticEvidence = state.getEvidenceList().stream()
-                .filter(evidence -> "TRACE".equals(evidence.type())
-                        || "METRIC".equals(evidence.type()) || "LOG".equals(evidence.type()))
+                .filter(evidence -> List.of("TRACE", "METRIC", "LOG", "PROBE", "CONFIG",
+                        "DEPENDENCY_STATUS").contains(evidence.type()))
                 .toList();
         Set<String> allowedEvidence = diagnosticEvidence.stream()
                 .map(Evidence::description)
@@ -48,7 +48,8 @@ public class LangChain4jIncidentDiagnosisService implements IncidentDiagnosisSer
                 result.rootCause(),
                 result.confidence(),
                 List.copyOf(result.evidence()),
-                result.recommendation()
+                result.recommendation(),
+                result.needHumanHandoff()
         );
     }
 
@@ -59,6 +60,7 @@ public class LangChain4jIncidentDiagnosisService implements IncidentDiagnosisSer
         context.put("incidentType", state.getIncidentType());
         context.put("hypotheses", state.getHypotheses());
         context.put("eliminatedCauses", state.getEliminatedCauses());
+        context.put("matchedDiagnosticPlaybooks", state.getMatchedPlaybookIds());
         context.put("toolCalls", state.getToolCalls());
         context.put("evidence", diagnosticEvidence);
         context.put("evidenceDescriptions", diagnosticEvidence.stream()

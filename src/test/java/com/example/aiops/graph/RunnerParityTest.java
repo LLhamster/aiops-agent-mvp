@@ -25,7 +25,7 @@ class RunnerParityTest {
     private LangGraphIncidentGraphRunner langGraphRunner;
 
     @ParameterizedTest
-    @ValueSource(strings = {"S01", "S02", "S03", "S04", "S05"})
+    @ValueSource(strings = {"S01", "S01A", "S01B", "S02", "S03", "S04", "S05"})
     void langGraphProducesTheSameStateAndReportAsManual(String caseId) {
         IncidentState manualState = manualRunner.runState(caseId);
         IncidentState langGraphState = langGraphRunner.runState(caseId);
@@ -46,7 +46,7 @@ class RunnerParityTest {
     void langGraphPreservesBadRequestAndNotFoundExceptions() {
         assertThatThrownBy(() -> langGraphRunner.run("bad"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("caseId must match ^S\\d{2}$");
+                .hasMessage("caseId must match ^S\\d{2}[A-Z]?$");
         assertThatThrownBy(() -> langGraphRunner.run("S99"))
                 .isInstanceOf(NoSuchElementException.class)
                 .hasMessage("Mock case S99 has no alert data");

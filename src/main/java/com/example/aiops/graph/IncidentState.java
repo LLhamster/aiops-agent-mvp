@@ -19,6 +19,7 @@ public class IncidentState {
     private String diagnosisMode;
     private List<String> hypotheses = new ArrayList<>();
     private List<String> eliminatedCauses = new ArrayList<>();
+    private List<String> matchedPlaybookIds = new ArrayList<>();
     private List<ToolCall> toolCalls = new ArrayList<>();
     private List<Evidence> evidenceList = new ArrayList<>();
     private String nextToolName;
@@ -26,7 +27,7 @@ public class IncidentState {
     private Map<String, Object> nextToolParams = new LinkedHashMap<>();
     private boolean needMoreEvidence = true;
     private int stepCount;
-    private int maxSteps = 4;
+    private int maxSteps = 6;
     private DiagnosisResult diagnosisResult;
     private boolean needHumanHandoff;
     private IncidentReport finalReport;
@@ -77,6 +78,14 @@ public class IncidentState {
 
     public void setEliminatedCauses(List<String> eliminatedCauses) {
         this.eliminatedCauses = eliminatedCauses;
+    }
+
+    public List<String> getMatchedPlaybookIds() {
+        return matchedPlaybookIds;
+    }
+
+    public void setMatchedPlaybookIds(List<String> matchedPlaybookIds) {
+        this.matchedPlaybookIds = matchedPlaybookIds;
     }
 
     public List<ToolCall> getToolCalls() {

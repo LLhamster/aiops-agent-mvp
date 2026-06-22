@@ -43,7 +43,7 @@ class LangGraphRunnerApiTest {
 
         mockMvc.perform(post("/api/evaluation/run"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCases").value(5))
+                .andExpect(jsonPath("$.totalCases").value(7))
                 .andExpect(jsonPath("$.rootCauseAccuracy").value(1.0))
                 .andExpect(jsonPath("$.toolSelectionAccuracy").value(1.0))
                 .andExpect(jsonPath("$.humanHandoffAccuracy").value(1.0));
@@ -55,7 +55,7 @@ class LangGraphRunnerApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"caseId\":\"bad\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("caseId must match ^S\\d{2}$"));
+                .andExpect(jsonPath("$.message").value("caseId must match ^S\\d{2}[A-Z]?$") );
 
         mockMvc.perform(post("/api/incidents/diagnose")
                         .contentType(MediaType.APPLICATION_JSON)

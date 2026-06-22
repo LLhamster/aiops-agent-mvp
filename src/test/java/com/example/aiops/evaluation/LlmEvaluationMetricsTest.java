@@ -34,12 +34,12 @@ class LlmEvaluationMetricsTest {
 
         EvaluationResult result = service.runAll("llm");
 
-        assertThat(result.totalCases()).isEqualTo(5);
-        assertThat(result.llmRootCauseAccuracy()).isEqualTo(0.4);
-        assertThat(result.llmEvidenceGroundedRate()).isEqualTo(0.6);
+        assertThat(result.totalCases()).isEqualTo(7);
+        assertThat(result.llmRootCauseAccuracy()).isEqualTo(4.0 / 7.0);
+        assertThat(result.llmEvidenceGroundedRate()).isEqualTo(5.0 / 7.0);
         assertThat(result.llmInvalidOutputCount()).isEqualTo(1);
         assertThat(result.llmUnknownCount()).isEqualTo(2);
-        assertThat(result.mockVsLlmConsistency()).isEqualTo(0.4);
+        assertThat(result.mockVsLlmConsistency()).isEqualTo(4.0 / 7.0);
     }
 
     private static final class MetricsFixtureRunner implements IncidentGraphRunner {
@@ -77,7 +77,7 @@ class LlmEvaluationMetricsTest {
             state.setCaseId(caseId);
             state.getEvidenceList().add(new Evidence("TRACE", "fixture", evidence, Map.of()));
             state.setDiagnosisResult(new DiagnosisResult(rootCause, 0.8,
-                    List.of(evidence), "处理建议"));
+                    List.of(evidence), "处理建议", truth.needHumanHandoff()));
             state.setFinalReport(new IncidentReport(caseId, "FIXTURE", rootCause, 0.8,
                     List.of(evidence), "处理建议", truth.needHumanHandoff(), toolCalls));
             return state;

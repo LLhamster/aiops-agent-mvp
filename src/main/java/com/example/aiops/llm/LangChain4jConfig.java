@@ -11,18 +11,25 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import java.util.Locale;
+import com.example.aiops.playbook.DiagnosticPlaybookRegistry;
 
 @Configuration
 public class LangChain4jConfig {
 
     @Bean
-    IncidentPlannerService incidentPlannerService() {
-        return new MockIncidentPlannerService();
+    DiagnosticPlaybookRegistry diagnosticPlaybookRegistry() {
+        return new DiagnosticPlaybookRegistry();
     }
 
     @Bean
-    MockIncidentDiagnosisService mockIncidentDiagnosisService() {
-        return new MockIncidentDiagnosisService();
+    IncidentPlannerService incidentPlannerService(DiagnosticPlaybookRegistry playbookRegistry) {
+        return new MockIncidentPlannerService(playbookRegistry);
+    }
+
+    @Bean
+    MockIncidentDiagnosisService mockIncidentDiagnosisService(
+            DiagnosticPlaybookRegistry playbookRegistry) {
+        return new MockIncidentDiagnosisService(playbookRegistry);
     }
 
     @Bean

@@ -6,7 +6,6 @@ public record GroundTruth(
         String caseId,
         String rootCause,
         List<String> expectedTools,
-        boolean needHumanHandoff,
-        List<String> expectedRunbookIds
+        boolean needHumanHandoff
 ) {
 }

@@ -53,21 +53,19 @@ public class EvaluationService {
         int rootCauseCorrect = 0;
         int handoffCorrect = 0;
         double toolRecallTotal = 0;
-        double runbookRecallTotal = 0;
 
         for (GroundTruth truth : repository.getAllGroundTruths()) {
-            IncidentState state = graphRunner.runState(truth.caseId(), "mock");
-            CaseScore score = score(truth, requiredReport(state), actualRunbookIds(state));
+            IncidentReport report = graphRunner.run(truth.caseId(), "mock");
+            CaseScore score = score(truth, report);
             rootCauseCorrect += score.rootMatches() ? 1 : 0;
             handoffCorrect += score.handoffMatches() ? 1 : 0;
             toolRecallTotal += score.toolRecall();
-            runbookRecallTotal += score.runbookRecall();
             caseResults.add(score.caseResult());
         }
 
         int totalCases = caseResults.size();
         if (totalCases == 0) {
-            return new EvaluationResult(0, 0, 0, 0, 0,
+            return new EvaluationResult(0, 0, 0, 0,
                     null, null, 0, 0, null, List.of());
         }
         return new EvaluationResult(
@@ -75,7 +73,6 @@ public class EvaluationService {
                 (double) rootCauseCorrect / totalCases,
                 toolRecallTotal / totalCases,
                 (double) handoffCorrect / totalCases,
-                runbookRecallTotal / totalCases,
                 null, null, 0, 0, null,
                 List.copyOf(caseResults)
         );
@@ -90,7 +87,6 @@ public class EvaluationService {
         int unknownCount = 0;
         int consistentCount = 0;
         double toolRecallTotal = 0;
-        double runbookRecallTotal = 0;
 
         for (GroundTruth truth : repository.getAllGroundTruths()) {
             IncidentState mockState = graphRunner.runState(truth.caseId(), "mock");
@@ -98,7 +94,7 @@ public class EvaluationService {
             try {
                 IncidentState llmState = graphRunner.runState(truth.caseId(), "llm");
                 IncidentReport llmReport = requiredReport(llmState);
-                CaseScore score = score(truth, llmReport, actualRunbookIds(llmState));
+                CaseScore score = score(truth, llmReport);
                 boolean unknown = "UNKNOWN".equals(llmReport.rootCause());
                 boolean grounded = evidenceIsGrounded(llmState);
 
@@ -108,30 +104,25 @@ public class EvaluationService {
                 unknownCount += unknown ? 1 : 0;
                 consistentCount += !unknown && mockReport.rootCause().equals(llmReport.rootCause()) ? 1 : 0;
                 toolRecallTotal += score.toolRecall();
-                runbookRecallTotal += score.runbookRecall();
                 caseResults.add(score.caseResult());
             } catch (InvalidLlmOutputException exception) {
                 invalidOutputCount++;
-                CaseScore score = failedLlmScore(truth, mockReport,
-                        actualRunbookIds(mockState), "INVALID_OUTPUT");
+                CaseScore score = failedLlmScore(truth, mockReport, "INVALID_OUTPUT");
                 handoffCorrect += score.handoffMatches() ? 1 : 0;
                 toolRecallTotal += score.toolRecall();
-                runbookRecallTotal += score.runbookRecall();
                 caseResults.add(score.caseResult());
             } catch (RuntimeException exception) {
                 unknownCount++;
-                CaseScore score = failedLlmScore(truth, mockReport,
-                        actualRunbookIds(mockState), "UNKNOWN");
+                CaseScore score = failedLlmScore(truth, mockReport, "UNKNOWN");
                 handoffCorrect += score.handoffMatches() ? 1 : 0;
                 toolRecallTotal += score.toolRecall();
-                runbookRecallTotal += score.runbookRecall();
                 caseResults.add(score.caseResult());
             }
         }
 
         int totalCases = caseResults.size();
         if (totalCases == 0) {
-            return new EvaluationResult(0, 0, 0, 0, 0,
+            return new EvaluationResult(0, 0, 0, 0,
                     0.0, 0.0, 0, 0, 0.0, List.of());
         }
         double llmRootCauseAccuracy = (double) rootCauseCorrect / totalCases;
@@ -140,7 +131,6 @@ public class EvaluationService {
                 llmRootCauseAccuracy,
                 toolRecallTotal / totalCases,
                 (double) handoffCorrect / totalCases,
-                runbookRecallTotal / totalCases,
                 llmRootCauseAccuracy,
                 (double) groundedCount / totalCases,
                 invalidOutputCount,
@@ -178,17 +168,15 @@ public class EvaluationService {
     }
 
     private CaseScore failedLlmScore(GroundTruth truth, IncidentReport mockReport,
-                                     List<String> actualRunbookIds,
                                      String actualRootCause) {
         IncidentReport failedReport = new IncidentReport(
                 mockReport.caseId(), mockReport.alertType(), actualRootCause, 0.0, List.of(),
                 "LLM diagnosis did not produce a valid result",
                 truth.needHumanHandoff(), mockReport.toolCalls());
-        return score(truth, failedReport, actualRunbookIds);
+        return score(truth, failedReport);
     }
 
-    private CaseScore score(GroundTruth truth, IncidentReport report,
-                            List<String> actualRunbookIds) {
+    private CaseScore score(GroundTruth truth, IncidentReport report) {
         boolean rootMatches = truth.rootCause().equals(report.rootCause());
         boolean handoffMatches = truth.needHumanHandoff() == report.needHumanHandoff();
         Set<String> actualToolSet = new LinkedHashSet<>();
@@ -199,34 +187,15 @@ public class EvaluationService {
                 .toList();
         double toolRecall = truth.expectedTools().isEmpty()
                 ? 1.0 : (double) matchedTools.size() / truth.expectedTools().size();
-        long matchedRunbooks = truth.expectedRunbookIds().stream()
-                .filter(actualRunbookIds::contains)
-                .distinct()
-                .count();
-        double runbookRecall = truth.expectedRunbookIds().isEmpty()
-                ? 1.0 : (double) matchedRunbooks / truth.expectedRunbookIds().size();
         CaseEvaluationResult caseResult = new CaseEvaluationResult(
                 truth.caseId(), truth.rootCause(), report.rootCause(), rootMatches,
                 truth.needHumanHandoff(), report.needHumanHandoff(), handoffMatches,
                 List.copyOf(truth.expectedTools()), List.copyOf(actualToolSet),
-                matchedTools, toolRecall, List.copyOf(truth.expectedRunbookIds()),
-                List.copyOf(actualRunbookIds), runbookRecall);
-        return new CaseScore(rootMatches, handoffMatches, toolRecall, runbookRecall, caseResult);
-    }
-
-    private List<String> actualRunbookIds(IncidentState state) {
-        return state.getEvidenceList().stream()
-                .filter(evidence -> "RUNBOOK".equals(evidence.type()))
-                .map(Evidence::attributes)
-                .map(attributes -> attributes.get("runbookId"))
-                .filter(String.class::isInstance)
-                .map(String.class::cast)
-                .distinct()
-                .toList();
+                matchedTools, toolRecall);
+        return new CaseScore(rootMatches, handoffMatches, toolRecall, caseResult);
     }
 
     private record CaseScore(boolean rootMatches, boolean handoffMatches, double toolRecall,
-                             double runbookRecall,
                              CaseEvaluationResult caseResult) {
     }
 }
