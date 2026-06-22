@@ -119,8 +119,6 @@ public class ToolExecutorNode {
     }
 
     private List<Evidence> executeRunbook(IncidentState state) {
-        String runbook = runbookTool.searchRunbook(state.getCaseId(), state.getNextToolParams());
-        return List.of(new Evidence("RUNBOOK", "search_runbook", "旁证（runbook）：" + runbook,
-                Map.of("content", runbook)));
+        return runbookTool.searchRunbook(state);
     }
 }

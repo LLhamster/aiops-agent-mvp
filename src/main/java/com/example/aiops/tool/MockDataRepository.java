@@ -75,7 +75,8 @@ public class MockDataRepository {
                 new TraceSpan("llm_generate", 900, "OK"))));
         runbooks.put("S01", "临时降低 topK，启用关键词检索 fallback，检查 Qdrant collection 状态");
         groundTruths.put("S01", new GroundTruth("S01", "QDRANT_TIMEOUT",
-                List.of("get_alert", "query_trace", "query_metrics"), false));
+                List.of("get_alert", "query_trace", "query_metrics"), false,
+                List.of("RB-QDRANT-TIMEOUT")));
 
         alerts.put("S02", new Alert("S02", "HIGH_LATENCY", "/api/ai/chat", "ai-service", "P2",
                 "LLM generation latency exceeds threshold"));
@@ -87,7 +88,8 @@ public class MockDataRepository {
                 new TraceSpan("llm_generate", 7500, "ERROR"))));
         runbooks.put("S02", "启用备用模型或降级响应，检查 LLM provider 状态与客户端超时配置");
         groundTruths.put("S02", new GroundTruth("S02", "LLM_TIMEOUT",
-                List.of("get_alert", "query_trace", "query_logs"), false));
+                List.of("get_alert", "query_trace", "query_logs"), false,
+                List.of("RB-LLM-TIMEOUT")));
 
         alerts.put("S03", new Alert("S03", "HIGH_LATENCY", "/api/books/search", "mysql", "P2",
                 "Book search endpoint latency exceeds threshold"));
@@ -99,7 +101,8 @@ public class MockDataRepository {
                 new TraceSpan("mysql_query", 2450, "OK"))));
         runbooks.put("S03", "检查 books.title 索引与执行计划，限制模糊查询范围并评估全文索引");
         groundTruths.put("S03", new GroundTruth("S03", "MYSQL_SLOW_QUERY",
-                List.of("get_alert", "query_trace", "query_logs"), false));
+                List.of("get_alert", "query_trace", "query_logs"), false,
+                List.of("RB-MYSQL-SLOW-QUERY")));
 
         alerts.put("S04", new Alert("S04", "QUEUE_BACKLOG", null, "read_task_queue", "P1",
                 "RabbitMQ queue backlog exceeds threshold"));
@@ -112,7 +115,8 @@ public class MockDataRepository {
         traces.put("S04", new TraceData("trace-s04", List.of(new TraceSpan("publish", 15, "OK"))));
         runbooks.put("S04", "人工确认失败消息安全性后重启消费者，检查连接与死信队列并逐步扩容消费端");
         groundTruths.put("S04", new GroundTruth("S04", "CONSUMER_FAILURE",
-                List.of("get_alert", "query_metrics", "query_logs"), true));
+                List.of("get_alert", "query_metrics", "query_logs"), true,
+                List.of("RB-RABBITMQ-BACKLOG")));
 
         alerts.put("S05", new Alert("S05", "HIGH_ERROR_RATE", "/api/book/detail", "book-service", "P3",
                 "Error rate is above threshold"));
@@ -125,6 +129,7 @@ public class MockDataRepository {
         traces.put("S05", new TraceData("trace-s05", List.of(new TraceSpan("book_detail", 35, "ERROR"))));
         runbooks.put("S05", "按最小请求量设置告警门槛，低流量窗口使用错误数与错误率组合条件");
         groundTruths.put("S05", new GroundTruth("S05", "FALSE_POSITIVE_LOW_TRAFFIC",
-                List.of("get_alert", "query_metrics", "query_logs"), false));
+                List.of("get_alert", "query_metrics", "query_logs"), false,
+                List.of("RB-FALSE-POSITIVE-LOW-TRAFFIC")));
     }
 }

@@ -30,7 +30,8 @@ public class LangChain4jIncidentDiagnosisService implements IncidentDiagnosisSer
     @Override
     public DiagnosisResult diagnose(IncidentState state) {
         List<Evidence> diagnosticEvidence = state.getEvidenceList().stream()
-                .filter(evidence -> !"ALERT".equals(evidence.type()))
+                .filter(evidence -> "TRACE".equals(evidence.type())
+                        || "METRIC".equals(evidence.type()) || "LOG".equals(evidence.type()))
                 .toList();
         Set<String> allowedEvidence = diagnosticEvidence.stream()
                 .map(Evidence::description)

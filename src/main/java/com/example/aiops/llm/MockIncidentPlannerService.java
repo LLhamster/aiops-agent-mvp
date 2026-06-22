@@ -28,6 +28,11 @@ public class MockIncidentPlannerService implements IncidentPlannerService {
         }
 
         String alertType = state.getAlert().alertType();
+        if (hasSufficientOperationalEvidence(state)
+                && !calledTools.contains("search_runbook")
+                && state.getStepCount() < state.getMaxSteps()) {
+            return choose("search_runbook", "现场证据已充分，检索知识依据与处理建议", state);
+        }
         if ("HIGH_LATENCY".equals(alertType)) {
             if (!hasEvidence(state, "TRACE") && !calledTools.contains("query_trace")) {
                 return choose("query_trace", "延迟类告警优先定位最慢 trace span", state);
@@ -90,5 +95,16 @@ public class MockIncidentPlannerService implements IncidentPlannerService {
                 .map(String.class::cast)
                 .findFirst()
                 .orElse("");
+    }
+
+    private boolean hasSufficientOperationalEvidence(IncidentState state) {
+        boolean hasTrace = hasEvidence(state, "TRACE");
+        boolean hasMetric = hasEvidence(state, "METRIC");
+        boolean hasLog = hasEvidence(state, "LOG");
+        return switch (state.getAlert().alertType()) {
+            case "HIGH_LATENCY" -> hasTrace && (hasMetric || hasLog);
+            case "HIGH_ERROR_RATE", "QUEUE_BACKLOG" -> hasMetric && hasLog;
+            default -> hasMetric && hasLog;
+        };
     }
 }

@@ -40,7 +40,8 @@ public class MockIncidentDiagnosisService implements IncidentDiagnosisService {
             throw new IllegalArgumentException("No mock diagnosis configured for case " + caseId);
         }
         List<String> evidence = state.getEvidenceList().stream()
-                .filter(item -> !"ALERT".equals(item.type()))
+                .filter(item -> "TRACE".equals(item.type())
+                        || "METRIC".equals(item.type()) || "LOG".equals(item.type()))
                 .map(item -> item.description())
                 .distinct()
                 .toList();

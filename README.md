@@ -26,7 +26,27 @@ START
   -> END
 ```
 
-HIGH_LATENCY 必须包含 trace 主证据，并至少包含 metrics、logs 或 runbook 中的一类旁证；不要求一次诊断同时查询三类旁证。HIGH_ERROR_RATE 和 QUEUE_BACKLOG 则要求 metrics 与 logs 同时存在。
+HIGH_LATENCY 必须包含 trace 主证据，并至少包含 metrics 或 logs 中的一类现场旁证。HIGH_ERROR_RATE 和 QUEUE_BACKLOG 要求 metrics 与 logs 同时存在。Runbook 是知识依据，不能替代这些现场证据；现场证据充分且仍有步数时，Planner 才会追加一次 `search_runbook`。
+
+## 本地 Markdown Runbook RAG
+
+五份手册位于 `src/main/resources/runbooks/`。启动时解析 front matter，并按固定的 Markdown 二级标题切分为类型化 section。
+
+初始召回只索引：
+
+- `RETRIEVAL_PROFILE`（检索描述）
+- `SYMPTOM`（典型现象）
+- `SIGNAL_PATTERN`（信号模式）
+
+命中 runbookId 后才加载常见原因、排查步骤、临时处理、风险操作、人工接管条件和最终建议模板。检索采用确定性关键词评分，不使用 embedding、Qdrant、数据库或外部服务。报告中的 TRACE/METRIC/LOG 标记为现场证据，RUNBOOK 标记为“知识依据”，操作步骤和处理方案不会参与根因判断。
+
+可直接调试召回结果：
+
+```bash
+curl -X POST http://localhost:8080/api/runbooks/search \
+  -H 'Content-Type: application/json' \
+  -d '{"alertType":"HIGH_LATENCY","component":"qdrant","rootCauseHypothesis":"QDRANT_TIMEOUT","symptom":"qdrant_search span latency high qdrant query timeout","topK":3}'
+```
 
 ## Mock 故障场景
 
@@ -140,7 +160,7 @@ curl -X POST 'http://localhost:8080/api/evaluation/run?diagnosisMode=mock'
 curl -X POST 'http://localhost:8080/api/evaluation/run?diagnosisMode=llm'
 ```
 
-评测会运行全部五个 case，计算根因准确率、人工接管准确率和工具选择准确率。工具选择准确率是各 case 的 expected tool 召回率平均值；重复调用只计一次，额外工具不扣分，工具顺序不计分。
+评测会运行全部五个 case，计算根因准确率、人工接管准确率、工具选择准确率和 `runbookRecallAccuracy`。逐 case 同时返回 `expectedRunbookIds`、`actualRunbookIds` 与 `runbookRecall`。工具选择准确率是各 case 的 expected tool 召回率平均值；重复调用只计一次，额外工具不扣分，工具顺序不计分。
 
 LLM 评测额外返回：
 

@@ -63,6 +63,11 @@ class NodeBehaviorTest {
 
         state.getEvidenceList().add(new Evidence("LOG", "query_logs", "log", Map.of()));
         analyzer.execute(state);
+        assertThat(state.isNeedMoreEvidence()).isTrue();
+
+        state.getEvidenceList().add(new Evidence("RUNBOOK", "search_runbook", "knowledge",
+                Map.of("runbookId", "RB-TEST")));
+        analyzer.execute(state);
         assertThat(state.isNeedMoreEvidence()).isFalse();
     }
 
@@ -74,6 +79,17 @@ class NodeBehaviorTest {
         new EvidenceAnalyzerNode().execute(state);
 
         assertThat(state.isNeedMoreEvidence()).isFalse();
+    }
+
+    @Test
+    void runbookKnowledgeCannotReplaceOperationalEvidence() {
+        IncidentState state = stateWithAlert("HIGH_LATENCY");
+        state.getEvidenceList().add(new Evidence("RUNBOOK", "search_runbook", "knowledge",
+                Map.of("runbookId", "RB-QDRANT-TIMEOUT")));
+
+        new EvidenceAnalyzerNode().execute(state);
+
+        assertThat(state.isNeedMoreEvidence()).isTrue();
     }
 
     @Test

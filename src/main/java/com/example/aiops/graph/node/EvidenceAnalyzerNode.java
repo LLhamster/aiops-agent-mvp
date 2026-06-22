@@ -17,14 +17,15 @@ public class EvidenceAnalyzerNode {
         boolean hasTrace = hasType(state, "TRACE");
         boolean hasMetric = hasType(state, "METRIC");
         boolean hasLog = hasType(state, "LOG");
-        boolean hasRunbook = hasType(state, "RUNBOOK");
-
-        boolean sufficient = switch (state.getAlert().alertType()) {
-            case "HIGH_LATENCY" -> hasTrace && (hasMetric || hasLog || hasRunbook);
+        boolean operationalEvidenceSufficient = switch (state.getAlert().alertType()) {
+            case "HIGH_LATENCY" -> hasTrace && (hasMetric || hasLog);
             case "HIGH_ERROR_RATE", "QUEUE_BACKLOG" -> hasMetric && hasLog;
-            default -> hasMetric && (hasLog || hasRunbook);
+            default -> hasMetric && hasLog;
         };
-        state.setNeedMoreEvidence(!sufficient);
+        boolean hasRunbook = hasType(state, "RUNBOOK");
+        boolean canSearchRunbook = operationalEvidenceSufficient && !hasRunbook
+                && state.getStepCount() < state.getMaxSteps();
+        state.setNeedMoreEvidence(!operationalEvidenceSufficient || canSearchRunbook);
         return state;
     }
 

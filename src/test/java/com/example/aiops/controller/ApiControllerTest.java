@@ -40,9 +40,28 @@ class ApiControllerTest {
                 .andExpect(jsonPath("$.rootCauseAccuracy").value(1.0))
                 .andExpect(jsonPath("$.toolSelectionAccuracy").value(1.0))
                 .andExpect(jsonPath("$.humanHandoffAccuracy").value(1.0))
+                .andExpect(jsonPath("$.runbookRecallAccuracy").value(1.0))
                 .andExpect(jsonPath("$.llmRootCauseAccuracy").doesNotExist())
                 .andExpect(jsonPath("$.llmInvalidOutputCount").value(0))
                 .andExpect(jsonPath("$.caseResults.length()").value(5));
+    }
+
+    @Test
+    void runbookSearchEndpointReturnsRetrievalSectionsOnly() throws Exception {
+        mockMvc.perform(post("/api/runbooks/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "alertType":"HIGH_LATENCY",
+                                  "component":"qdrant",
+                                  "rootCauseHypothesis":"QDRANT_TIMEOUT",
+                                  "symptom":"qdrant_search span latency high qdrant query timeout",
+                                  "topK":3
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].runbookId").value("RB-QDRANT-TIMEOUT"))
+                .andExpect(jsonPath("$[0].sectionType").value("SIGNAL_PATTERN"));
     }
 
     @Test

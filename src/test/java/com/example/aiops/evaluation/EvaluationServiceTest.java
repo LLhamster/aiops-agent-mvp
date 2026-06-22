@@ -21,9 +21,12 @@ class EvaluationServiceTest {
         assertThat(result.rootCauseAccuracy()).isEqualTo(1.0);
         assertThat(result.humanHandoffAccuracy()).isEqualTo(1.0);
         assertThat(result.toolSelectionAccuracy()).isEqualTo(1.0);
+        assertThat(result.runbookRecallAccuracy()).isEqualTo(1.0);
         assertThat(result.caseResults()).allSatisfy(caseResult -> {
             assertThat(caseResult.toolRecall()).isEqualTo(1.0);
             assertThat(caseResult.actualTools()).containsAll(caseResult.expectedTools());
+            assertThat(caseResult.runbookRecall()).isEqualTo(1.0);
+            assertThat(caseResult.actualRunbookIds()).containsAll(caseResult.expectedRunbookIds());
         });
     }
 }
