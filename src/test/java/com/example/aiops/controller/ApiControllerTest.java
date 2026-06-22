@@ -34,13 +34,31 @@ class ApiControllerTest {
 
     @Test
     void evaluationEndpointReturnsPerfectMockBaseline() throws Exception {
-        mockMvc.perform(post("/api/evaluation/run"))
+        mockMvc.perform(post("/api/evaluation/run").param("diagnosisMode", "mock"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalCases").value(5))
                 .andExpect(jsonPath("$.rootCauseAccuracy").value(1.0))
                 .andExpect(jsonPath("$.toolSelectionAccuracy").value(1.0))
                 .andExpect(jsonPath("$.humanHandoffAccuracy").value(1.0))
+                .andExpect(jsonPath("$.llmRootCauseAccuracy").doesNotExist())
+                .andExpect(jsonPath("$.llmInvalidOutputCount").value(0))
                 .andExpect(jsonPath("$.caseResults.length()").value(5));
+    }
+
+    @Test
+    void llmEvaluationWithoutApiKeyReturnsExplicitBadRequest() throws Exception {
+        mockMvc.perform(post("/api/evaluation/run").param("diagnosisMode", "llm"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("aiops.diagnosis.llm.api-key must be configured in llm mode"));
+    }
+
+    @Test
+    void evaluationRejectsUnknownDiagnosisMode() throws Exception {
+        mockMvc.perform(post("/api/evaluation/run").param("diagnosisMode", "other"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("diagnosisMode must be either 'mock' or 'llm'"));
     }
 
     @Test

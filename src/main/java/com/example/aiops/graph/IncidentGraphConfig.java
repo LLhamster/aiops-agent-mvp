@@ -9,6 +9,7 @@ import com.example.aiops.graph.node.PlannerNode;
 import com.example.aiops.graph.node.ReportNode;
 import com.example.aiops.graph.node.ToolExecutorNode;
 import com.example.aiops.llm.IncidentDiagnosisService;
+import com.example.aiops.llm.DiagnosisServiceResolver;
 import com.example.aiops.llm.IncidentPlannerService;
 import com.example.aiops.tool.AlertTool;
 import com.example.aiops.tool.LogTool;
@@ -49,8 +50,8 @@ public class IncidentGraphConfig {
     }
 
     @Bean
-    DiagnosisNode diagnosisNode(IncidentDiagnosisService diagnosisService) {
-        return new DiagnosisNode(diagnosisService);
+    DiagnosisNode diagnosisNode(DiagnosisServiceResolver diagnosisServiceResolver) {
+        return new DiagnosisNode(diagnosisServiceResolver);
     }
 
     @Bean

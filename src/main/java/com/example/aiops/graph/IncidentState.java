@@ -16,6 +16,7 @@ public class IncidentState {
     private String caseId;
     private Alert alert;
     private String incidentType;
+    private String diagnosisMode;
     private List<String> hypotheses = new ArrayList<>();
     private List<String> eliminatedCauses = new ArrayList<>();
     private List<ToolCall> toolCalls = new ArrayList<>();
@@ -52,6 +53,14 @@ public class IncidentState {
 
     public void setIncidentType(String incidentType) {
         this.incidentType = incidentType;
+    }
+
+    public String getDiagnosisMode() {
+        return diagnosisMode;
+    }
+
+    public void setDiagnosisMode(String diagnosisMode) {
+        this.diagnosisMode = diagnosisMode;
     }
 
     public List<String> getHypotheses() {

@@ -72,8 +72,14 @@ public class LangGraphIncidentGraphRunner implements IncidentGraphRunner {
 
     @Override
     public IncidentState runState(String caseId) {
+        return runState(caseId, null);
+    }
+
+    @Override
+    public IncidentState runState(String caseId, String diagnosisMode) {
         IncidentState initialState = new IncidentState();
         initialState.setCaseId(caseId);
+        initialState.setDiagnosisMode(diagnosisMode);
         try {
             LangGraphIncidentState finalState = compiledGraph.invoke(Map.of(
                             LangGraphIncidentState.INCIDENT_STATE_KEY,

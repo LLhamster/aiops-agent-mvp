@@ -133,12 +133,24 @@ curl -X POST http://localhost:8080/api/incidents/diagnose \
 ## 评测接口
 
 ```bash
-curl -X POST http://localhost:8080/api/evaluation/run
+# 默认或显式评估 Mock Diagnosis
+curl -X POST 'http://localhost:8080/api/evaluation/run?diagnosisMode=mock'
+
+# 使用已配置的真实模型评估 LLM Diagnosis
+curl -X POST 'http://localhost:8080/api/evaluation/run?diagnosisMode=llm'
 ```
 
 评测会运行全部五个 case，计算根因准确率、人工接管准确率和工具选择准确率。工具选择准确率是各 case 的 expected tool 召回率平均值；重复调用只计一次，额外工具不扣分，工具顺序不计分。
 
-Mock Diagnosis 与 GroundTruth 一致，因此默认回归基线的三项准确率均为 `1.0`。LLM Diagnosis 的根因和接管判断由真实模型生成，评测值可能波动。
+LLM 评测额外返回：
+
+- `llmRootCauseAccuracy`：LLM 根因准确率
+- `llmEvidenceGroundedRate`：返回证据全部来自该 case 输入 `evidenceList` 的比例
+- `llmInvalidOutputCount`：结构化输出解析失败、字段非法或引用不存在证据的 case 数
+- `llmUnknownCount`：模型调用失败或返回 `UNKNOWN` 的 case 数
+- `mockVsLlmConsistency`：LLM 与 Mock 根因一致的 case 比例
+
+Mock Diagnosis 与 GroundTruth 一致，因此默认回归基线的三项准确率均为 `1.0`；Mock 评测中的 LLM 比率字段为 `null`，两个计数字段为 `0`。LLM 评测必须配置 API Key，缺失时仅该请求返回 HTTP 400，不影响默认 Mock 模式。LLM Diagnosis 的结果由真实模型生成，评测值可能波动。
 
 ## 后续扩展
 

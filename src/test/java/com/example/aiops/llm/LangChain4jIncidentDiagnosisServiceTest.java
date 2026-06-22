@@ -85,8 +85,21 @@ class LangChain4jIncidentDiagnosisServiceTest {
                 new ObjectMapper());
 
         assertThatThrownBy(() -> service.diagnose(incidentState()))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(InvalidLlmOutputException.class)
                 .hasMessageContaining(expectedMessage);
+    }
+
+    @Test
+    void malformedStructuredOutputIsClassifiedAsInvalid() {
+        IncidentDiagnosisAiService aiService = AiServices.builder(IncidentDiagnosisAiService.class)
+                .chatModel(new FakeChatModel("not-json"))
+                .build();
+        LangChain4jIncidentDiagnosisService service =
+                new LangChain4jIncidentDiagnosisService(aiService, new ObjectMapper());
+
+        assertThatThrownBy(() -> service.diagnose(incidentState()))
+                .isInstanceOf(InvalidLlmOutputException.class)
+                .hasMessageContaining("could not be parsed");
     }
 
     private IncidentState incidentState() {

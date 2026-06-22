@@ -3,6 +3,7 @@ package com.example.aiops.evaluation;
 import com.example.aiops.model.EvaluationResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -16,7 +17,8 @@ public class EvaluationController {
     }
 
     @PostMapping("/run")
-    public EvaluationResult run() {
-        return evaluationService.runAll();
+    public EvaluationResult run(
+            @RequestParam(name = "diagnosisMode", defaultValue = "mock") String diagnosisMode) {
+        return evaluationService.runAll(diagnosisMode);
     }
 }

@@ -5,6 +5,7 @@ import com.example.aiops.model.DiagnosisResult;
 import com.example.aiops.model.Evidence;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.langchain4j.service.output.OutputParsingException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,7 +36,12 @@ public class LangChain4jIncidentDiagnosisService implements IncidentDiagnosisSer
                 .map(Evidence::description)
                 .collect(Collectors.toUnmodifiableSet());
 
-        DiagnosisResult result = aiService.diagnose(serializeContext(state, diagnosticEvidence));
+        DiagnosisResult result;
+        try {
+            result = aiService.diagnose(serializeContext(state, diagnosticEvidence));
+        } catch (OutputParsingException exception) {
+            throw new InvalidLlmOutputException("LLM diagnosis output could not be parsed");
+        }
         validate(result, allowedEvidence);
         return new DiagnosisResult(
                 result.rootCause(),
@@ -66,24 +72,25 @@ public class LangChain4jIncidentDiagnosisService implements IncidentDiagnosisSer
 
     private void validate(DiagnosisResult result, Set<String> allowedEvidence) {
         if (result == null) {
-            throw new IllegalStateException("LLM diagnosis returned no structured result");
+            throw new InvalidLlmOutputException("LLM diagnosis returned no structured result");
         }
         if (result.rootCause() == null || !ROOT_CAUSE_PATTERN.matcher(result.rootCause()).matches()) {
-            throw new IllegalStateException("LLM diagnosis rootCause must be uppercase snake_case");
+            throw new InvalidLlmOutputException("LLM diagnosis rootCause must be uppercase snake_case");
         }
         if (!Double.isFinite(result.confidence())
                 || result.confidence() < 0.0 || result.confidence() > 1.0) {
-            throw new IllegalStateException("LLM diagnosis confidence must be between 0 and 1");
+            throw new InvalidLlmOutputException("LLM diagnosis confidence must be between 0 and 1");
         }
         if (result.recommendation() == null || result.recommendation().isBlank()) {
-            throw new IllegalStateException("LLM diagnosis recommendation must not be blank");
+            throw new InvalidLlmOutputException("LLM diagnosis recommendation must not be blank");
         }
         if (result.evidence() == null || result.evidence().isEmpty()) {
-            throw new IllegalStateException("LLM diagnosis evidence must not be empty");
+            throw new InvalidLlmOutputException("LLM diagnosis evidence must not be empty");
         }
         for (String evidence : result.evidence()) {
             if (evidence == null || evidence.isBlank() || !allowedEvidence.contains(evidence)) {
-                throw new IllegalStateException("LLM diagnosis contains evidence not present in incident state");
+                throw new InvalidLlmOutputException(
+                        "LLM diagnosis contains evidence not present in incident state");
             }
         }
     }

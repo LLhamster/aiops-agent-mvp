@@ -34,8 +34,14 @@ public class ManualIncidentGraphRunner implements IncidentGraphRunner {
 
     @Override
     public IncidentState runState(String caseId) {
+        return runState(caseId, null);
+    }
+
+    @Override
+    public IncidentState runState(String caseId, String diagnosisMode) {
         IncidentState state = new IncidentState();
         state.setCaseId(caseId);
+        state.setDiagnosisMode(diagnosisMode);
         alertParserNode.execute(state);
 
         while (state.isNeedMoreEvidence() && state.getStepCount() < state.getMaxSteps()) {

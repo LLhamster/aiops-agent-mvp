@@ -7,6 +7,11 @@ public record EvaluationResult(
         double rootCauseAccuracy,
         double toolSelectionAccuracy,
         double humanHandoffAccuracy,
+        Double llmRootCauseAccuracy,
+        Double llmEvidenceGroundedRate,
+        int llmInvalidOutputCount,
+        int llmUnknownCount,
+        Double mockVsLlmConsistency,
         List<CaseEvaluationResult> caseResults
 ) {
 }
